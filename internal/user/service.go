@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/citadel-corp/go-project-template/internal/common/jwt"
-	"github.com/citadel-corp/go-project-template/internal/common/password"
+	"github.com/citadel-corp/halosuster/internal/common/jwt"
+	"github.com/citadel-corp/halosuster/internal/common/password"
 )
 
 type Service interface {
