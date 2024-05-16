@@ -1,8 +1,20 @@
 package user
 
+import "time"
+
 type User struct {
-	ID             uint64
-	Username       string
-	Name           string
-	HashedPassword string
+	ID              string
+	NIP             int
+	Name            string
+	UserType        UserType
+	IdentityCardURL *string
+	HashedPassword  *string
+	CreatedAt       time.Time
 }
+
+type UserType string
+
+const (
+	IT    UserType = "IT"
+	Nurse UserType = "Nurse"
+)

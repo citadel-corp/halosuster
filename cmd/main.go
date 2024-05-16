@@ -81,12 +81,14 @@ func main() {
 
 	// user routes
 	ur := v1.PathPrefix("/user").Subrouter()
-	ur.HandleFunc("/register", userHandler.CreateUser).Methods(http.MethodPost)
-	ur.HandleFunc("/login", userHandler.Login).Methods(http.MethodPost)
+	ur.HandleFunc("/it/register", userHandler.CreateITUser).Methods(http.MethodPost)
+	ur.HandleFunc("/it/login", userHandler.LoginITUser).Methods(http.MethodPost)
+	ur.HandleFunc("/nurse/register", middleware.AuthorizeITUser(userHandler.CreateNurseUser)).Methods(http.MethodPost)
+	ur.HandleFunc("/nurse/login", userHandler.LoginNurseUser).Methods(http.MethodPost)
 
 	// image routes
 	ir := v1.PathPrefix("/image").Subrouter()
-	ir.HandleFunc("", middleware.Authorized(imageHandler.UploadToS3)).Methods(http.MethodPost)
+	ir.HandleFunc("", middleware.AuthorizeITAndNurseUser(imageHandler.UploadToS3)).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
 		Addr:    ":8000",

@@ -16,23 +16,33 @@ var (
 	ErrTokenInvalid  = errors.New("invalid token")
 )
 
-func Sign(ttl time.Duration, subject string) (string, error) {
+type CustomClaims struct {
+	UserType string `json:"userType"`
+	jwt.RegisteredClaims
+}
+
+func Sign(ttl time.Duration, subject string, userType string) (string, error) {
 	now := time.Now()
 	expiry := now.Add(ttl)
-	t := jwt.NewWithClaims(
-		jwt.SigningMethodHS256,
+	claims := CustomClaims{
+		userType,
 		jwt.RegisteredClaims{
+			// A usual scenario is to set the expiration time relative to the current time
+			ExpiresAt: jwt.NewNumericDate(expiry),
 			IssuedAt:  jwt.NewNumericDate(now),
 			NotBefore: jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(expiry),
 			Subject:   subject,
 		},
+	}
+	t := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		claims,
 	)
 	return t.SignedString(key)
 }
 
-func VerifyAndGetSubject(tokenString string) (string, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
+func VerifyAndGetSubject(tokenString string) (string, string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
@@ -40,17 +50,17 @@ func VerifyAndGetSubject(tokenString string) (string, error) {
 		return key, nil
 	})
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	// Checking token validity
 	if !token.Valid {
-		return "", ErrTokenInvalid
+		return "", "", ErrTokenInvalid
 	}
 
-	if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
-		return claims.Subject, nil
+	if claims, ok := token.Claims.(*CustomClaims); ok {
+		return claims.Subject, claims.UserType, nil
 	} else {
-		return "", ErrUnknownClaims
+		return "", "", ErrUnknownClaims
 	}
 }

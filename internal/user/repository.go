@@ -11,8 +11,8 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, user *User) error
-	GetByUsername(ctx context.Context, username string) (*User, error)
-	GetByID(ctx context.Context, id uint64) (*User, error)
+	GetByNIP(ctx context.Context, nip int) (*User, error)
+	GetByID(ctx context.Context, id string) (*User, error)
 }
 
 type dbRepository struct {
@@ -27,40 +27,37 @@ func NewRepository(db *db.DB) Repository {
 func (d *dbRepository) Create(ctx context.Context, user *User) error {
 	createUserQuery := `
 		INSERT INTO users (
-			username, name, hashed_password
+			id, name, nip, user_type, hashed_password, identity_card_url
 		) VALUES (
-			$1, $2, $3
-		)
-		RETURNING id;
+			$1, $2, $3, $4, $5, $6
+		);
 	`
-	row := d.db.DB().QueryRowContext(ctx, createUserQuery, user.Username, user.Name, user.HashedPassword)
-	var id uint64
-	err := row.Scan(&id)
+	_, err := d.db.DB().ExecContext(ctx, createUserQuery, user.ID, user.Name, user.NIP, user.UserType, user.HashedPassword, user.IdentityCardURL)
 	var pgErr *pgconn.PgError
 	if err != nil {
 		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
 			case "23505":
-				return ErrUsernameAlreadyExists
+				return ErrNIPAlreadyExists
 			default:
 				return err
 			}
 		}
 		return err
 	}
-	user.ID = id
 	return nil
 }
 
-// GetByUsernameAndHashedPassword implements Repository.
-func (d *dbRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
+// GetByNIP implements Repository.
+func (d *dbRepository) GetByNIP(ctx context.Context, nip int) (*User, error) {
 	getUserQuery := `
-		SELECT id, username, name, hashed_password FROM users
-		WHERE username = $1;
+		SELECT id, name, nip, user_type, hashed_password, identity_card_url, created_at
+		FROM users
+		WHERE nip = $1;
 	`
-	row := d.db.DB().QueryRowContext(ctx, getUserQuery, username)
+	row := d.db.DB().QueryRowContext(ctx, getUserQuery, nip)
 	u := &User{}
-	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.HashedPassword)
+	err := row.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}
@@ -70,14 +67,14 @@ func (d *dbRepository) GetByUsername(ctx context.Context, username string) (*Use
 	return u, nil
 }
 
-func (d *dbRepository) GetByID(ctx context.Context, id uint64) (*User, error) {
+func (d *dbRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	getUserQuery := `
 		SELECT id, username, name, product_sold_total, hashed_password FROM users
 		WHERE id = $1;
 	`
 	row := d.db.DB().QueryRowContext(ctx, getUserQuery, id)
 	u := &User{}
-	err := row.Scan(&u.ID, &u.Username, &u.Name, &u.HashedPassword)
+	err := row.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}

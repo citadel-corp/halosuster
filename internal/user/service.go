@@ -5,13 +5,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/citadel-corp/halosuster/internal/common/id"
 	"github.com/citadel-corp/halosuster/internal/common/jwt"
 	"github.com/citadel-corp/halosuster/internal/common/password"
 )
 
 type Service interface {
-	Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error)
-	Login(ctx context.Context, req LoginPayload) (*UserResponse, error)
+	CreateITUser(ctx context.Context, req CreateITUserPayload) (*UserResponse, error)
+	CreateNurseUser(ctx context.Context, req CreateNurseUserPayload) (*UserResponse, error)
+	LoginITUser(ctx context.Context, req ITUserLoginPayload) (*UserResponse, error)
+	LoginNurseUser(ctx context.Context, req NurseUserLoginPayload) (*UserResponse, error)
 }
 
 type userService struct {
@@ -22,7 +25,7 @@ func NewService(repository Repository) Service {
 	return &userService{repository: repository}
 }
 
-func (s *userService) Create(ctx context.Context, req CreateUserPayload) (*UserResponse, error) {
+func (s *userService) CreateITUser(ctx context.Context, req CreateITUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
@@ -32,36 +35,62 @@ func (s *userService) Create(ctx context.Context, req CreateUserPayload) (*UserR
 		return nil, err
 	}
 	user := &User{
-		Username:       req.Username,
+		ID:             id.GenerateStringID(16),
+		NIP:            req.NIP,
 		Name:           req.Name,
-		HashedPassword: hashedPassword,
+		UserType:       IT,
+		HashedPassword: &hashedPassword,
 	}
 	err = s.repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Minute*2, fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Hour*2, string(IT), fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}
 	return &UserResponse{
-		Username:    req.Username,
+		UserID:      user.ID,
+		NIP:         user.NIP,
 		Name:        req.Name,
-		AccessToken: accessToken,
+		AccessToken: &accessToken,
 	}, nil
 }
 
-func (s *userService) Login(ctx context.Context, req LoginPayload) (*UserResponse, error) {
+func (s *userService) CreateNurseUser(ctx context.Context, req CreateNurseUserPayload) (*UserResponse, error) {
 	err := req.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
 	}
-	user, err := s.repository.GetByUsername(ctx, req.Username)
+	user := &User{
+		ID:              id.GenerateStringID(16),
+		NIP:             req.NIP,
+		Name:            req.Name,
+		UserType:        Nurse,
+		IdentityCardURL: &req.IdentityCardScanImg,
+	}
+	err = s.repository.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	match, err := password.Matches(req.Password, user.HashedPassword)
+	return &UserResponse{
+		UserID: user.ID,
+		NIP:    user.NIP,
+		Name:   req.Name,
+	}, nil
+}
+
+func (s *userService) LoginITUser(ctx context.Context, req ITUserLoginPayload) (*UserResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
+	}
+	user, err := s.repository.GetByNIP(ctx, req.NIP)
+	if err != nil {
+		return nil, err
+	}
+	match, err := password.Matches(req.Password, *user.HashedPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -69,13 +98,47 @@ func (s *userService) Login(ctx context.Context, req LoginPayload) (*UserRespons
 		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Minute*2, fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Hour*2, string(IT), fmt.Sprint(user.ID))
 	if err != nil {
 		return nil, err
 	}
 	return &UserResponse{
-		Username:    user.Username,
+		UserID:      user.ID,
+		NIP:         user.NIP,
 		Name:        user.Name,
-		AccessToken: accessToken,
+		AccessToken: &accessToken,
+	}, nil
+}
+
+// LoginNurseUser implements Service.
+func (s *userService) LoginNurseUser(ctx context.Context, req NurseUserLoginPayload) (*UserResponse, error) {
+	err := req.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrValidationFailed, err)
+	}
+	user, err := s.repository.GetByNIP(ctx, req.NIP)
+	if err != nil {
+		return nil, err
+	}
+	if user.HashedPassword == nil {
+		return nil, ErrPasswordNotCreated
+	}
+	match, err := password.Matches(req.Password, *user.HashedPassword)
+	if err != nil {
+		return nil, err
+	}
+	if !match {
+		return nil, ErrWrongPassword
+	}
+	// create access token with signed jwt
+	accessToken, err := jwt.Sign(time.Hour*2, string(Nurse), fmt.Sprint(user.ID))
+	if err != nil {
+		return nil, err
+	}
+	return &UserResponse{
+		UserID:      user.ID,
+		NIP:         user.NIP,
+		Name:        user.Name,
+		AccessToken: &accessToken,
 	}, nil
 }
