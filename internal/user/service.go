@@ -15,6 +15,7 @@ type Service interface {
 	CreateNurseUser(ctx context.Context, req CreateNurseUserPayload) (*UserResponse, error)
 	LoginITUser(ctx context.Context, req ITUserLoginPayload) (*UserResponse, error)
 	LoginNurseUser(ctx context.Context, req NurseUserLoginPayload) (*UserResponse, error)
+	GrantNurseAccess(ctx context.Context, userID string, req GrantNurseAccessPayload) error
 }
 
 type userService struct {
@@ -141,4 +142,25 @@ func (s *userService) LoginNurseUser(ctx context.Context, req NurseUserLoginPayl
 		Name:        user.Name,
 		AccessToken: &accessToken,
 	}, nil
+}
+
+// GrantNurseAccess implements Service.
+func (s *userService) GrantNurseAccess(ctx context.Context, userID string, req GrantNurseAccessPayload) error {
+	err := req.Validate()
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrValidationFailed, err)
+	}
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user.UserType != Nurse {
+		return ErrUserNotFound
+	}
+	hashedPassword, err := password.Hash(req.Password)
+	if err != nil {
+		return err
+	}
+	user.HashedPassword = &hashedPassword
+	return s.repository.Update(ctx, user)
 }

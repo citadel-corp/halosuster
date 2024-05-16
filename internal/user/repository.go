@@ -13,6 +13,7 @@ type Repository interface {
 	Create(ctx context.Context, user *User) error
 	GetByNIP(ctx context.Context, nip int) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
+	Update(ctx context.Context, user *User) error
 }
 
 type dbRepository struct {
@@ -69,7 +70,8 @@ func (d *dbRepository) GetByNIP(ctx context.Context, nip int) (*User, error) {
 
 func (d *dbRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	getUserQuery := `
-		SELECT id, username, name, product_sold_total, hashed_password FROM users
+		SELECT id, name, nip, user_type, hashed_password, identity_card_url, created_at
+		FROM users
 		WHERE id = $1;
 	`
 	row := d.db.DB().QueryRowContext(ctx, getUserQuery, id)
@@ -82,4 +84,25 @@ func (d *dbRepository) GetByID(ctx context.Context, id string) (*User, error) {
 		return nil, err
 	}
 	return u, nil
+}
+
+// Update implements Repository.
+func (d *dbRepository) Update(ctx context.Context, user *User) error {
+	q := `
+        UPDATE users
+        SET name = $1, nip = $2, user_type = $3, hashed_password = $4, identity_card_url = $5
+        WHERE id = $6;
+    `
+	row, err := d.db.DB().ExecContext(ctx, q, user.Name, user.NIP, user.UserType, user.HashedPassword, user.IdentityCardURL, user.ID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := row.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrUserNotFound
+	}
+	return nil
 }

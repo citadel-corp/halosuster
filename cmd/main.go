@@ -85,6 +85,7 @@ func main() {
 	ur.HandleFunc("/it/login", userHandler.LoginITUser).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/register", middleware.AuthorizeITUser(userHandler.CreateNurseUser)).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/login", userHandler.LoginNurseUser).Methods(http.MethodPost)
+	ur.HandleFunc("/nurse/{userId}/access", middleware.AuthorizeITUser(userHandler.GrantNurseAccess)).Methods(http.MethodPost)
 
 	// image routes
 	ir := v1.PathPrefix("/image").Subrouter()

@@ -97,7 +97,7 @@ func (p ITUserLoginPayload) Validate() error {
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), itNIPValidationRule),
-		validation.Field(&p.Password, validation.Required, validation.Length(5, 15)),
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
 	)
 }
 
@@ -113,6 +113,17 @@ func (p NurseUserLoginPayload) Validate() error {
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), nurseNIPValidationRule),
-		validation.Field(&p.Password, validation.Required, validation.Length(5, 15)),
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
+	)
+}
+
+type GrantNurseAccessPayload struct {
+	Password string `json:"password"`
+}
+
+func (p GrantNurseAccessPayload) Validate() error {
+
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
 	)
 }
