@@ -14,6 +14,7 @@ type Repository interface {
 	GetByNIP(ctx context.Context, nip int) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
 	Update(ctx context.Context, user *User) error
+	DeleteByID(ctx context.Context, id string) error
 }
 
 type dbRepository struct {
@@ -94,6 +95,26 @@ func (d *dbRepository) Update(ctx context.Context, user *User) error {
         WHERE id = $6;
     `
 	row, err := d.db.DB().ExecContext(ctx, q, user.Name, user.NIP, user.UserType, user.HashedPassword, user.IdentityCardURL, user.ID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := row.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
+// DeleteByID implements Repository.
+func (d *dbRepository) DeleteByID(ctx context.Context, id string) error {
+	q := `
+        DELETE FROM users
+        WHERE id = $1;
+    `
+	row, err := d.db.DB().ExecContext(ctx, q, id)
 	if err != nil {
 		return err
 	}

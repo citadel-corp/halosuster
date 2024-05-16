@@ -194,6 +194,29 @@ func (h *Handler) LoginNurseUser(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) DeleteNurse(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userID := params["userId"]
+	err := h.service.DeleteNurse(r.Context(), userID)
+	if errors.Is(err, ErrUserNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "User deleted",
+	})
+}
+
 func (h *Handler) GrantNurseAccess(w http.ResponseWriter, r *http.Request) {
 	var req GrantNurseAccessPayload
 

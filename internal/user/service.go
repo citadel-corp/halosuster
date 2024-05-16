@@ -15,6 +15,7 @@ type Service interface {
 	CreateNurseUser(ctx context.Context, req CreateNurseUserPayload) (*UserResponse, error)
 	LoginITUser(ctx context.Context, req ITUserLoginPayload) (*UserResponse, error)
 	LoginNurseUser(ctx context.Context, req NurseUserLoginPayload) (*UserResponse, error)
+	DeleteNurse(ctx context.Context, userID string) error
 	GrantNurseAccess(ctx context.Context, userID string, req GrantNurseAccessPayload) error
 }
 
@@ -142,6 +143,18 @@ func (s *userService) LoginNurseUser(ctx context.Context, req NurseUserLoginPayl
 		Name:        user.Name,
 		AccessToken: &accessToken,
 	}, nil
+}
+
+// DeleteNurse implements Service.
+func (s *userService) DeleteNurse(ctx context.Context, userID string) error {
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user.UserType != Nurse {
+		return ErrUserNotFound
+	}
+	return s.repository.DeleteByID(ctx, userID)
 }
 
 // GrantNurseAccess implements Service.
