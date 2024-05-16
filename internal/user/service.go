@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,6 +16,7 @@ type Service interface {
 	CreateNurseUser(ctx context.Context, req CreateNurseUserPayload) (*UserResponse, error)
 	LoginITUser(ctx context.Context, req ITUserLoginPayload) (*UserResponse, error)
 	LoginNurseUser(ctx context.Context, req NurseUserLoginPayload) (*UserResponse, error)
+	UpdateNurse(ctx context.Context, userID string, req UpdateNursePayload) error
 	DeleteNurse(ctx context.Context, userID string) error
 	GrantNurseAccess(ctx context.Context, userID string, req GrantNurseAccessPayload) error
 }
@@ -143,6 +145,31 @@ func (s *userService) LoginNurseUser(ctx context.Context, req NurseUserLoginPayl
 		Name:        user.Name,
 		AccessToken: &accessToken,
 	}, nil
+}
+
+// UpdateNurse implements Service.
+func (s *userService) UpdateNurse(ctx context.Context, userID string, req UpdateNursePayload) error {
+	err := req.Validate()
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrValidationFailed, err)
+	}
+	user, err := s.repository.GetByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if user.UserType != Nurse {
+		return ErrUserNotFound
+	}
+	_, err = s.repository.GetByNIP(ctx, req.NIP)
+	if errors.Is(err, ErrUserNotFound) {
+		user.NIP = req.NIP
+		user.Name = req.Name
+		return s.repository.Update(ctx, user)
+	}
+	if err != nil {
+		return err
+	}
+	return ErrNIPAlreadyExists
 }
 
 // DeleteNurse implements Service.

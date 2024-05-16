@@ -117,6 +117,22 @@ func (p NurseUserLoginPayload) Validate() error {
 	)
 }
 
+type UpdateNursePayload struct {
+	NIP  int    `json:"nip"`
+	Name string `json:"name"`
+
+	nipStr string
+}
+
+func (p UpdateNursePayload) Validate() error {
+	p.nipStr = strconv.Itoa(p.NIP)
+
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), nurseNIPValidationRule),
+		validation.Field(&p.Name, validation.Required, validation.Length(5, 50)),
+	)
+}
+
 type GrantNurseAccessPayload struct {
 	Password string `json:"password"`
 }
