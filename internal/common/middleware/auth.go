@@ -38,7 +38,6 @@ func AuthorizeITUser(next func(w http.ResponseWriter, r *http.Request)) func(w h
 		if userType != "IT" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
-
 		}
 
 		ctx := context.WithValue(r.Context(), ContextAuthKey{}, subject)
