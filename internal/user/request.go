@@ -62,7 +62,7 @@ type CreateITUserPayload struct {
 func (p CreateITUserPayload) Validate() error {
 	p.nipStr = strconv.Itoa(p.NIP)
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), itNIPValidationRule),
+		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 15), itNIPValidationRule),
 		validation.Field(&p.Name, validation.Required, validation.Length(5, 50)),
 		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
 	)
@@ -79,7 +79,7 @@ type CreateNurseUserPayload struct {
 func (p CreateNurseUserPayload) Validate() error {
 	p.nipStr = strconv.Itoa(p.NIP)
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), nurseNIPValidationRule),
+		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 15), nurseNIPValidationRule),
 		validation.Field(&p.Name, validation.Required, validation.Length(5, 50)),
 		validation.Field(&p.IdentityCardScanImg, validation.Required, imgUrlValidationRule),
 	)
