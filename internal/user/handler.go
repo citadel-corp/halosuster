@@ -6,6 +6,8 @@ import (
 
 	"github.com/citadel-corp/halosuster/internal/common/request"
 	"github.com/citadel-corp/halosuster/internal/common/response"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 )
 
 type Handler struct {
@@ -190,5 +192,142 @@ func (h *Handler) LoginNurseUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusOK, response.ResponseBody{
 		Message: "User logged successfully",
 		Data:    userResp,
+	})
+}
+
+func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	newSchema := schema.NewDecoder()
+	newSchema.IgnoreUnknownKeys(true)
+
+	var req ListUserPayload
+	if err := newSchema.Decode(&req, r.URL.Query()); err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+
+	users, err := h.service.ListUsers(r.Context(), req)
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "success",
+		Data:    users,
+	})
+}
+
+func (h *Handler) UpdateNurse(w http.ResponseWriter, r *http.Request) {
+	var req UpdateNursePayload
+
+	err := request.DecodeJSON(w, r, &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to decode JSON",
+			Error:   err.Error(),
+		})
+		return
+	}
+	params := mux.Vars(r)
+	userID := params["userId"]
+	err = h.service.UpdateNurse(r.Context(), userID, req)
+	if errors.Is(err, ErrValidationFailed) {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrNIPAlreadyExists) {
+		response.JSON(w, http.StatusConflict, response.ResponseBody{
+			Message: "User already exists",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrUserNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "User deleted",
+	})
+}
+
+func (h *Handler) DeleteNurse(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	userID := params["userId"]
+	err := h.service.DeleteNurse(r.Context(), userID)
+	if errors.Is(err, ErrUserNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "User deleted",
+	})
+}
+
+func (h *Handler) GrantNurseAccess(w http.ResponseWriter, r *http.Request) {
+	var req GrantNurseAccessPayload
+
+	err := request.DecodeJSON(w, r, &req)
+	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Failed to decode JSON",
+			Error:   err.Error(),
+		})
+		return
+	}
+	params := mux.Vars(r)
+	userID := params["userId"]
+	err = h.service.GrantNurseAccess(r.Context(), userID, req)
+	if errors.Is(err, ErrUserNotFound) {
+		response.JSON(w, http.StatusNotFound, response.ResponseBody{
+			Message: "Not found",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if errors.Is(err, ErrValidationFailed) {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{
+			Message: "Bad request",
+			Error:   err.Error(),
+		})
+		return
+	}
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "User password set",
 	})
 }

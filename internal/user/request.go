@@ -97,7 +97,7 @@ func (p ITUserLoginPayload) Validate() error {
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), itNIPValidationRule),
-		validation.Field(&p.Password, validation.Required, validation.Length(5, 15)),
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
 	)
 }
 
@@ -113,6 +113,60 @@ func (p NurseUserLoginPayload) Validate() error {
 
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), nurseNIPValidationRule),
-		validation.Field(&p.Password, validation.Required, validation.Length(5, 15)),
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
+	)
+}
+
+type ListUserPayload struct {
+	UserID    string `schema:"userId" binding:"omitempty"`
+	Limit     int    `schema:"limit" binding:"omitempty"`
+	Offset    int    `schema:"offset" binding:"omitempty"`
+	Name      string `schema:"race" binding:"omitempty"`
+	NIP       int    `schema:"nip" binding:"omitempty"`
+	Role      string `schema:"role" binding:"omitempty"`
+	CreatedAt string `schema:"createdAt" binding:"omitempty"`
+
+	nipStr        string
+	CreatedAtType CreatedAtType
+	RoleType      RoleType
+}
+
+type CreatedAtType int
+type RoleType int
+
+const (
+	Ascending CreatedAtType = iota
+	Descending
+	IgnoreCreatedAt
+
+	ITType RoleType = iota
+	NurseType
+	IgnoreRole
+)
+
+type UpdateNursePayload struct {
+	NIP  int    `json:"nip"`
+	Name string `json:"name"`
+
+	nipStr string
+}
+
+func (p UpdateNursePayload) Validate() error {
+	p.nipStr = strconv.Itoa(p.NIP)
+
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.nipStr, validation.Required, validation.Length(13, 13), nurseNIPValidationRule),
+		validation.Field(&p.Name, validation.Required, validation.Length(5, 50)),
+	)
+}
+
+type GrantNurseAccessPayload struct {
+	Password string `json:"password"`
+}
+
+func (p GrantNurseAccessPayload) Validate() error {
+
+	return validation.ValidateStruct(&p,
+		validation.Field(&p.Password, validation.Required, validation.Length(5, 33)),
 	)
 }
