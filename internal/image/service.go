@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	bucket = os.Getenv("S3_BUCKET_NAME")
-	key    = os.Getenv("S3_SECRET_KEY")
+	bucket = os.Getenv("AWS_S3_BUCKET_NAME")
+	key    = os.Getenv("AWS_SECRET_ACCESS_KEY")
 )
 
 type Service interface {

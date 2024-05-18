@@ -265,7 +265,7 @@ func (h *Handler) UpdateNurse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.JSON(w, http.StatusOK, response.ResponseBody{
-		Message: "User deleted",
+		Message: "User updated",
 	})
 }
 

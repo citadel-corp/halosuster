@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/citadel-corp/halosuster/internal/common/db"
@@ -37,7 +38,8 @@ func (d *dbRepository) Create(ctx context.Context, user *User) error {
 			$1, $2, $3, $4, $5, $6
 		);
 	`
-	_, err := d.db.DB().ExecContext(ctx, createUserQuery, user.ID, user.Name, user.NIP, user.UserType, user.HashedPassword, user.IdentityCardURL)
+	nipStr := strconv.Itoa(user.NIP)
+	_, err := d.db.DB().ExecContext(ctx, createUserQuery, user.ID, user.Name, nipStr, user.UserType, user.HashedPassword, user.IdentityCardURL)
 	var pgErr *pgconn.PgError
 	if err != nil {
 		if errors.As(err, &pgErr) {
@@ -60,15 +62,17 @@ func (d *dbRepository) GetByNIP(ctx context.Context, nip int) (*User, error) {
 		FROM users
 		WHERE nip = $1;
 	`
-	row := d.db.DB().QueryRowContext(ctx, getUserQuery, nip)
+	row := d.db.DB().QueryRowContext(ctx, getUserQuery, strconv.Itoa(nip))
 	u := &User{}
-	err := row.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
+	var nipStr string
+	err := row.Scan(&u.ID, &u.Name, &nipStr, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
+	u.NIP = nip
 	return u, nil
 }
 
@@ -80,13 +84,16 @@ func (d *dbRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	`
 	row := d.db.DB().QueryRowContext(ctx, getUserQuery, id)
 	u := &User{}
-	err := row.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
+	var nipStr string
+	err := row.Scan(&u.ID, &u.Name, &nipStr, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
 		return nil, err
 	}
+	nip, _ := strconv.Atoi(nipStr)
+	u.NIP = nip
 	return u, nil
 }
 
@@ -102,22 +109,16 @@ func (d *dbRepository) List(ctx context.Context, req ListUserPayload) ([]*User, 
 	}
 	if req.Name != "" {
 		listQuery += fmt.Sprintf("name LIKE '%%%s%%' AND ", req.Name)
-		paramNo += 1
-		params = append(params, req.Name)
 	}
 	if req.nipStr != "" {
 		listQuery += fmt.Sprintf("nip LIKE '%%%s%%' AND ", req.nipStr)
-		paramNo += 1
-		params = append(params, req.nipStr)
 	}
 	switch req.RoleType {
 	case ITType:
 		listQuery += fmt.Sprintf("user_type = $%d AND ", paramNo)
-		paramNo += 1
 		params = append(params, "IT")
 	case NurseType:
 		listQuery += fmt.Sprintf("user_type = $%d AND ", paramNo)
-		paramNo += 1
 		params = append(params, "Nurse")
 	}
 	switch req.CreatedAtType {
@@ -130,6 +131,9 @@ func (d *dbRepository) List(ctx context.Context, req ListUserPayload) ([]*User, 
 		listQuery, _ = strings.CutSuffix(listQuery, "AND ")
 	}
 	listQuery += fmt.Sprintf(" LIMIT %d OFFSET %d;", req.Limit, req.Offset)
+	if strings.Contains(listQuery, "WHERE  LIMIT") {
+		listQuery = strings.Replace(listQuery, "WHERE  LIMIT", "LIMIT", 1)
+	}
 	if strings.Contains(listQuery, "WHERE  ORDER") {
 		listQuery = strings.Replace(listQuery, "WHERE  ORDER", "ORDER", 1)
 	}
@@ -140,10 +144,13 @@ func (d *dbRepository) List(ctx context.Context, req ListUserPayload) ([]*User, 
 	res := make([]*User, 0)
 	for rows.Next() {
 		u := &User{}
-		err = rows.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
+		var nipStr string
+		err = rows.Scan(&u.ID, &u.Name, &nipStr, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
+		nip, _ := strconv.Atoi(nipStr)
+		u.NIP = nip
 		res = append(res, u)
 	}
 	return res, nil
@@ -156,7 +163,7 @@ func (d *dbRepository) Update(ctx context.Context, user *User) error {
         SET name = $1, nip = $2, user_type = $3, hashed_password = $4, identity_card_url = $5
         WHERE id = $6;
     `
-	row, err := d.db.DB().ExecContext(ctx, q, user.Name, user.NIP, user.UserType, user.HashedPassword, user.IdentityCardURL, user.ID)
+	row, err := d.db.DB().ExecContext(ctx, q, user.Name, strconv.Itoa(user.NIP), user.UserType, user.HashedPassword, user.IdentityCardURL, user.ID)
 	if err != nil {
 		return err
 	}

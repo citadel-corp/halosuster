@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/citadel-corp/halosuster/internal/common/id"
@@ -51,7 +52,7 @@ func (s *userService) CreateITUser(ctx context.Context, req CreateITUserPayload)
 		return nil, err
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*2, string(IT), fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Hour*2, fmt.Sprint(user.ID), string(IT))
 	if err != nil {
 		return nil, err
 	}
@@ -103,7 +104,7 @@ func (s *userService) LoginITUser(ctx context.Context, req ITUserLoginPayload) (
 		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*2, string(IT), fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Hour*2, fmt.Sprint(user.ID), string(IT))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func (s *userService) LoginNurseUser(ctx context.Context, req NurseUserLoginPayl
 		return nil, ErrWrongPassword
 	}
 	// create access token with signed jwt
-	accessToken, err := jwt.Sign(time.Hour*2, string(Nurse), fmt.Sprint(user.ID))
+	accessToken, err := jwt.Sign(time.Hour*2, fmt.Sprint(user.ID), string(Nurse))
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,9 @@ func (s *userService) ListUsers(ctx context.Context, req ListUserPayload) ([]*Us
 	} else if req.CreatedAt == "desc" {
 		req.CreatedAtType = Descending
 	}
-
+	if req.NIP != 0 {
+		req.nipStr = strconv.Itoa(req.NIP)
+	}
 	users, err := s.repository.List(ctx, req)
 	if err != nil {
 		return nil, err
@@ -185,25 +188,22 @@ func (s *userService) ListUsers(ctx context.Context, req ListUserPayload) ([]*Us
 
 // UpdateNurse implements Service.
 func (s *userService) UpdateNurse(ctx context.Context, userID string, req UpdateNursePayload) error {
-	err := req.Validate()
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrValidationFailed, err)
-	}
-	user, err := s.repository.GetByID(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if user.UserType != Nurse {
-		return ErrUserNotFound
-	}
-	_, err = s.repository.GetByNIP(ctx, req.NIP)
+	_, err := s.repository.GetByNIP(ctx, req.NIP)
 	if errors.Is(err, ErrUserNotFound) {
+		err := req.Validate()
+		if err != nil {
+			return fmt.Errorf("%w: %w", ErrValidationFailed, err)
+		}
+		user, err := s.repository.GetByID(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if user.UserType != Nurse {
+			return ErrUserNotFound
+		}
 		user.NIP = req.NIP
 		user.Name = req.Name
 		return s.repository.Update(ctx, user)
-	}
-	if err != nil {
-		return err
 	}
 	return ErrNIPAlreadyExists
 }

@@ -59,7 +59,7 @@ func main() {
 	// initialize image domain
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("ap-southeast-1"),
-		Credentials: credentials.NewStaticCredentials(os.Getenv("S3_ID"), os.Getenv("S3_SECRET_KEY"), ""),
+		Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
 	})
 	if err != nil {
 		log.Error().Msg(fmt.Sprintf("Cannot create AWS session: %v", err))
@@ -85,7 +85,7 @@ func main() {
 	ur.HandleFunc("/it/login", userHandler.LoginITUser).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/register", middleware.AuthorizeITUser(userHandler.CreateNurseUser)).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/login", userHandler.LoginNurseUser).Methods(http.MethodPost)
-	ur.HandleFunc("/", middleware.AuthorizeITUser(userHandler.ListUsers)).Methods(http.MethodGet)
+	ur.HandleFunc("", middleware.AuthorizeITUser(userHandler.ListUsers)).Methods(http.MethodGet)
 	ur.HandleFunc("/nurse/{userId}", middleware.AuthorizeITUser(userHandler.UpdateNurse)).Methods(http.MethodPut)
 	ur.HandleFunc("/nurse/{userId}", middleware.AuthorizeITUser(userHandler.DeleteNurse)).Methods(http.MethodDelete)
 	ur.HandleFunc("/nurse/{userId}/access", middleware.AuthorizeITUser(userHandler.GrantNurseAccess)).Methods(http.MethodPost)
@@ -95,7 +95,7 @@ func main() {
 	ir.HandleFunc("", middleware.AuthorizeITAndNurseUser(imageHandler.UploadToS3)).Methods(http.MethodPost)
 
 	httpServer := &http.Server{
-		Addr:    ":8000",
+		Addr:    ":8080",
 		Handler: r,
 	}
 
