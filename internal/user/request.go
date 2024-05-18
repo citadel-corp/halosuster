@@ -117,6 +117,33 @@ func (p NurseUserLoginPayload) Validate() error {
 	)
 }
 
+type ListUserPayload struct {
+	UserID    string `schema:"userId" binding:"omitempty"`
+	Limit     int    `schema:"limit" binding:"omitempty"`
+	Offset    int    `schema:"offset" binding:"omitempty"`
+	Name      string `schema:"race" binding:"omitempty"`
+	NIP       int    `schema:"nip" binding:"omitempty"`
+	Role      string `schema:"role" binding:"omitempty"`
+	CreatedAt string `schema:"createdAt" binding:"omitempty"`
+
+	nipStr        string
+	CreatedAtType CreatedAtType
+	RoleType      RoleType
+}
+
+type CreatedAtType int
+type RoleType int
+
+const (
+	Ascending CreatedAtType = iota
+	Descending
+	IgnoreCreatedAt
+
+	ITType RoleType = iota
+	NurseType
+	IgnoreRole
+)
+
 type UpdateNursePayload struct {
 	NIP  int    `json:"nip"`
 	Name string `json:"name"`

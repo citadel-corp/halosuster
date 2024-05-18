@@ -85,6 +85,7 @@ func main() {
 	ur.HandleFunc("/it/login", userHandler.LoginITUser).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/register", middleware.AuthorizeITUser(userHandler.CreateNurseUser)).Methods(http.MethodPost)
 	ur.HandleFunc("/nurse/login", userHandler.LoginNurseUser).Methods(http.MethodPost)
+	ur.HandleFunc("/", middleware.AuthorizeITUser(userHandler.ListUsers)).Methods(http.MethodGet)
 	ur.HandleFunc("/nurse/{userId}", middleware.AuthorizeITUser(userHandler.UpdateNurse)).Methods(http.MethodPut)
 	ur.HandleFunc("/nurse/{userId}", middleware.AuthorizeITUser(userHandler.DeleteNurse)).Methods(http.MethodDelete)
 	ur.HandleFunc("/nurse/{userId}/access", middleware.AuthorizeITUser(userHandler.GrantNurseAccess)).Methods(http.MethodPost)

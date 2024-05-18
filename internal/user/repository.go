@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/citadel-corp/halosuster/internal/common/db"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -13,6 +15,7 @@ type Repository interface {
 	Create(ctx context.Context, user *User) error
 	GetByNIP(ctx context.Context, nip int) (*User, error)
 	GetByID(ctx context.Context, id string) (*User, error)
+	List(ctx context.Context, req ListUserPayload) ([]*User, error)
 	Update(ctx context.Context, user *User) error
 	DeleteByID(ctx context.Context, id string) error
 }
@@ -85,6 +88,65 @@ func (d *dbRepository) GetByID(ctx context.Context, id string) (*User, error) {
 		return nil, err
 	}
 	return u, nil
+}
+
+// List implements Repository.
+func (d *dbRepository) List(ctx context.Context, req ListUserPayload) ([]*User, error) {
+	paramNo := 1
+	listQuery := "SELECT id, name, nip, user_type, hashed_password, identity_card_url, created_at FROM users WHERE "
+	params := make([]interface{}, 0)
+	if req.UserID != "" {
+		listQuery += fmt.Sprintf("id = $%d AND ", paramNo)
+		paramNo += 1
+		params = append(params, req.UserID)
+	}
+	if req.Name != "" {
+		listQuery += fmt.Sprintf("name LIKE '%%%s%%' AND ", req.Name)
+		paramNo += 1
+		params = append(params, req.Name)
+	}
+	if req.nipStr != "" {
+		listQuery += fmt.Sprintf("nip LIKE '%%%s%%' AND ", req.nipStr)
+		paramNo += 1
+		params = append(params, req.nipStr)
+	}
+	switch req.RoleType {
+	case ITType:
+		listQuery += fmt.Sprintf("user_type = $%d AND ", paramNo)
+		paramNo += 1
+		params = append(params, "IT")
+	case NurseType:
+		listQuery += fmt.Sprintf("user_type = $%d AND ", paramNo)
+		paramNo += 1
+		params = append(params, "Nurse")
+	}
+	switch req.CreatedAtType {
+	case Ascending:
+		listQuery += fmt.Sprintf(" ORDER BY created_at ASC ")
+	case Descending:
+		listQuery += fmt.Sprintf(" ORDER BY created_at DESC ")
+	}
+	if strings.HasSuffix(listQuery, "AND ") {
+		listQuery, _ = strings.CutSuffix(listQuery, "AND ")
+	}
+	listQuery += fmt.Sprintf(" LIMIT %d OFFSET %d;", req.Limit, req.Offset)
+	if strings.Contains(listQuery, "WHERE  ORDER") {
+		listQuery = strings.Replace(listQuery, "WHERE  ORDER", "ORDER", 1)
+	}
+	rows, err := d.db.DB().QueryContext(ctx, listQuery, params...)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*User, 0)
+	for rows.Next() {
+		u := &User{}
+		err = rows.Scan(&u.ID, &u.Name, &u.NIP, &u.UserType, &u.HashedPassword, &u.IdentityCardURL, &u.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, u)
+	}
+	return res, nil
 }
 
 // Update implements Repository.
