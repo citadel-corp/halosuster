@@ -188,25 +188,22 @@ func (s *userService) ListUsers(ctx context.Context, req ListUserPayload) ([]*Us
 
 // UpdateNurse implements Service.
 func (s *userService) UpdateNurse(ctx context.Context, userID string, req UpdateNursePayload) error {
-	err := req.Validate()
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrValidationFailed, err)
-	}
-	user, err := s.repository.GetByID(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if user.UserType != Nurse {
-		return ErrUserNotFound
-	}
-	_, err = s.repository.GetByNIP(ctx, req.NIP)
+	_, err := s.repository.GetByNIP(ctx, req.NIP)
 	if errors.Is(err, ErrUserNotFound) {
+		err := req.Validate()
+		if err != nil {
+			return fmt.Errorf("%w: %w", ErrValidationFailed, err)
+		}
+		user, err := s.repository.GetByID(ctx, userID)
+		if err != nil {
+			return err
+		}
+		if user.UserType != Nurse {
+			return ErrUserNotFound
+		}
 		user.NIP = req.NIP
 		user.Name = req.Name
 		return s.repository.Update(ctx, user)
-	}
-	if err != nil {
-		return err
 	}
 	return ErrNIPAlreadyExists
 }
