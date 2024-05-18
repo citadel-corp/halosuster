@@ -1,7 +1,8 @@
 package user
 
 type UserResponse struct {
-	Username    string `json:"username"`
-	Name        string `json:"name"`
-	AccessToken string `json:"accessToken"`
+	UserID      string  `json:"userId"`
+	NIP         int     `json:"nip"`
+	Name        string  `json:"name"`
+	AccessToken *string `json:"accessToken"`
 }

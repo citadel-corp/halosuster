@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS
 users (
 	id CHAR(16) PRIMARY KEY,
     name VARCHAR(50) NOT NULL,
-    nip CHAR(13) NOT NULL UNIQUE,
+    nip INT(13) NOT NULL UNIQUE,
     user_type user_type NOT NULL,
     hashed_password BYTEA,
     identity_card_url TEXT,

@@ -9,7 +9,7 @@ import (
 
 type ContextAuthKey struct{}
 
-func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func AuthorizeITUser(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -30,10 +30,15 @@ func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.R
 			return
 		}
 
-		subject, err := jwt.VerifyAndGetSubject(tokenString)
+		subject, userType, err := jwt.VerifyAndGetSubject(tokenString)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
+		}
+		if userType != "IT" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+
 		}
 
 		ctx := context.WithValue(r.Context(), ContextAuthKey{}, subject)
@@ -43,29 +48,28 @@ func Authorized(next func(w http.ResponseWriter, r *http.Request)) func(w http.R
 	}
 }
 
-// Authenticate request only if authorization header is set
-func Authenticate(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func AuthorizeITAndNurseUser(next func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		tokenString := r.Header.Get("Authorization")
 		if tokenString == "" {
-			next(w, r)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		if len(tokenString) <= len("Bearer ") {
-			next(w, r)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		tokenString = tokenString[len("Bearer "):]
 		if tokenString == "" {
-			next(w, r)
+			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		subject, err := jwt.VerifyAndGetSubject(tokenString)
+		subject, _, err := jwt.VerifyAndGetSubject(tokenString)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
