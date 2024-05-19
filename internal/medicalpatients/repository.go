@@ -36,7 +36,7 @@ func (d *dbRepository) Create(ctx context.Context, medicalpatient *MedicalPatien
 		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
 			case "23505":
-				return ErrPatientIdNumberAlreadyExists
+				return ErrPatientNotFound
 			default:
 				return err
 			}
