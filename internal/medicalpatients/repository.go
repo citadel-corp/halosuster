@@ -2,6 +2,7 @@ package medicalpatients
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	"github.com/citadel-corp/halosuster/internal/common/db"
@@ -10,6 +11,7 @@ import (
 
 type Repository interface {
 	Create(ctx context.Context, medicalrecord *MedicalPatients) error
+	GetByIdentityNumber(ctx context.Context, idNumber string) (*MedicalPatients, error)
 }
 
 type dbRepository struct {
@@ -40,4 +42,22 @@ func (d *dbRepository) Create(ctx context.Context, medicalpatient *MedicalPatien
 		return err
 	}
 	return nil
+}
+
+func (d *dbRepository) GetByIdentityNumber(ctx context.Context, idNumber string) (*MedicalPatients, error) {
+	q := `
+		SELECT id, identity_number, phone_number, name, birth_date, gender, identity_card_url, created_at
+		FROM medical_patients
+		WHERE identity_number = $1;
+	`
+	row := d.db.DB().QueryRowContext(ctx, q, idNumber)
+	m := &MedicalPatients{}
+	err := row.Scan(&m.ID, &m.IdentityNumber, &m.PhoneNumber, &m.Name, &m.Birthdate, &m.Gender, &m.IdentityCardUrl, &m.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrPatientNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return m, nil
 }

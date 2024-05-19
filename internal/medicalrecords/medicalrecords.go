@@ -5,8 +5,8 @@ import "time"
 type MedicalRecords struct {
 	ID string
 	// UserID string
-	IdentityNumber string
-	Symptoms       string
-	Medications    string
-	CreatedAt      time.Time
+	PatientId   string
+	Symptoms    string
+	Medications string
+	CreatedAt   time.Time
 }
