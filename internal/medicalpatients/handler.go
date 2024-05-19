@@ -6,6 +6,7 @@ import (
 
 	"github.com/citadel-corp/halosuster/internal/common/request"
 	"github.com/citadel-corp/halosuster/internal/common/response"
+	"github.com/gorilla/schema"
 )
 
 type Handler struct {
@@ -54,5 +55,30 @@ func (h *Handler) CreateMedicalPatient(w http.ResponseWriter, r *http.Request) {
 	}
 	response.JSON(w, http.StatusCreated, response.ResponseBody{
 		Message: "Patient registered successfully",
+	})
+}
+
+func (h *Handler) ListMedicalPatient(w http.ResponseWriter, r *http.Request) {
+	var req ListPatientsPayload
+
+	newSchema := schema.NewDecoder()
+	newSchema.IgnoreUnknownKeys(true)
+
+	if err := newSchema.Decode(&req, r.URL.Query()); err != nil {
+		response.JSON(w, http.StatusBadRequest, response.ResponseBody{})
+		return
+	}
+
+	patients, err := h.service.ListMedicalPatients(r.Context(), req)
+	if err != nil {
+		response.JSON(w, http.StatusInternalServerError, response.ResponseBody{
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+		return
+	}
+	response.JSON(w, http.StatusOK, response.ResponseBody{
+		Message: "Patients fetched successfully",
+		Data:    patients,
 	})
 }

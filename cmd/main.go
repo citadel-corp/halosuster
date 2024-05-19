@@ -109,6 +109,7 @@ func main() {
 	// medical patient routes
 	mpr := v1.PathPrefix("/medical/patient").Subrouter()
 	mpr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalPatientHandler.CreateMedicalPatient)).Methods(http.MethodPost)
+	mpr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalPatientHandler.ListMedicalPatient)).Methods(http.MethodGet)
 
 	// medical record routes
 	mr := v1.PathPrefix("/medical/record").Subrouter()

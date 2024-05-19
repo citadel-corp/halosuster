@@ -3,12 +3,14 @@ package medicalpatients
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/citadel-corp/halosuster/internal/common/id"
 )
 
 type Service interface {
 	CreateMedicalPatients(ctx context.Context, req PostMedicalPatients) error
+	ListMedicalPatients(ctx context.Context, req ListPatientsPayload) ([]MedicalPatients, error)
 }
 
 type medicalPatientsService struct {
@@ -38,4 +40,22 @@ func (s *medicalPatientsService) CreateMedicalPatients(ctx context.Context, req 
 	}
 
 	return nil
+}
+
+func (s *medicalPatientsService) ListMedicalPatients(ctx context.Context, req ListPatientsPayload) ([]MedicalPatients, error) {
+	if req.Limit == 0 {
+		req.Limit = 5
+	}
+
+	if req.CreatedAt == "" {
+		req.CreatedAt = "desc"
+	}
+
+	req.PhoneNumber = strings.Replace(req.PhoneNumber, "+", "", 1)
+
+	res, err := s.repository.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

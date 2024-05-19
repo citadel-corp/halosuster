@@ -12,13 +12,13 @@ const (
 var Genders []interface{} = []interface{}{Male, Female}
 
 type MedicalPatients struct {
-	ID string
+	ID string `json:"-"`
 	// UserID string
-	IdentityNumber  string
-	PhoneNumber     string
-	Name            string
-	Birthdate       time.Time
-	Gender          Gender
-	IdentityCardUrl string
-	CreatedAt       time.Time
+	IdentityNumber  string    `json:"identityNumber"`
+	PhoneNumber     string    `json:"phoneNumber"`
+	Name            string    `json:"name"`
+	Birthdate       time.Time `json:"birthDate"`
+	Gender          Gender    `json:"gender"`
+	IdentityCardUrl string    `json:"-"`
+	CreatedAt       time.Time `json:"createdAt"`
 }
