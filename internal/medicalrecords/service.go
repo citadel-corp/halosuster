@@ -10,21 +10,22 @@ import (
 
 type Service interface {
 	CreateMedicalRecord(ctx context.Context, req PostMedicalRecord) error
+	ListMedicalRecords(ctx context.Context, req ListRecordsPayload) ([]ListMedicalRecordsResponse, error)
 }
 
-type userService struct {
+type medicalRecordsService struct {
 	repository        Repository
 	patientRepository medicalpatients.Repository
 }
 
 func NewService(repository Repository, patientRepository medicalpatients.Repository) Service {
-	return &userService{
+	return &medicalRecordsService{
 		repository:        repository,
 		patientRepository: patientRepository,
 	}
 }
 
-func (s *userService) CreateMedicalRecord(ctx context.Context, req PostMedicalRecord) error {
+func (s *medicalRecordsService) CreateMedicalRecord(ctx context.Context, req PostMedicalRecord) error {
 	var err error
 	idNumber := strconv.Itoa(int(req.IdentityNumber))
 
@@ -50,4 +51,20 @@ func (s *userService) CreateMedicalRecord(ctx context.Context, req PostMedicalRe
 	}
 
 	return nil
+}
+
+func (s *medicalRecordsService) ListMedicalRecords(ctx context.Context, req ListRecordsPayload) ([]ListMedicalRecordsResponse, error) {
+	if req.Limit == 0 {
+		req.Limit = 5
+	}
+
+	if req.CreatedAt == "" {
+		req.CreatedAt = "desc"
+	}
+
+	res, err := s.repository.List(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
 }

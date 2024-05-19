@@ -114,6 +114,7 @@ func main() {
 	// medical record routes
 	mr := v1.PathPrefix("/medical/record").Subrouter()
 	mr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalRecordsHandler.CreateMedicalRecord)).Methods(http.MethodPost)
+	mr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalRecordsHandler.ListMedicalRecords)).Methods(http.MethodGet)
 
 	httpServer := &http.Server{
 		Addr:    ":8080",

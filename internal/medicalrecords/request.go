@@ -28,9 +28,9 @@ func (p PostMedicalRecord) Validate() error {
 }
 
 type ListRecordsPayload struct {
-	IdentityNumber string `schema:"identityDetail.identityNumber" binding:"omitempty"`
-	Name           string `schema:"name" binding:"omitempty"`
-	PhoneNumber    string `schema:"phoneNumber" binding:"omitempty"`
+	IdentityNumber string
+	UserId         string
+	NIP            string
 	CreatedAt      string `schema:"createdAt" binding:"omitempty"`
 	Limit          int    `schema:"limit" binding:"omitempty"`
 	Offset         int    `schema:"offset" binding:"omitempty"`
