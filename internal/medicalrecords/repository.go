@@ -20,10 +20,10 @@ func NewRepository(db *db.DB) Repository {
 
 func (d *dbRepository) Create(ctx context.Context, medicalrecord *MedicalRecords) error {
 	q := `
-        INSERT INTO medical_records (id, patient_id, symptoms, medications, created_at)
-        VALUES ($1, $2, $3, $4, $5);
+        INSERT INTO medical_records (id, user_id, patient_id, symptoms, medications, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6);
     `
-	_, err := d.db.DB().ExecContext(ctx, q, medicalrecord.ID, medicalrecord.PatientId, medicalrecord.Symptoms, medicalrecord.Medications, medicalrecord.CreatedAt)
+	_, err := d.db.DB().ExecContext(ctx, q, medicalrecord.ID, medicalrecord.UserID, medicalrecord.PatientId, medicalrecord.Symptoms, medicalrecord.Medications, medicalrecord.CreatedAt)
 	if err != nil {
 		return err
 	}

@@ -9,6 +9,7 @@ import (
 
 type PostMedicalRecord struct {
 	IdentityNumber int64  `json:"identityNumber"`
+	UserId         string `json:"userId"`
 	Symptoms       string `json:"symptoms"`
 	Medications    string `json:"medications"`
 }
@@ -24,4 +25,13 @@ func (p PostMedicalRecord) Validate() error {
 		validation.Field(&p.Symptoms, validation.Required, validation.Length(1, 2000)),
 		validation.Field(&p.Medications, validation.Required, validation.Length(1, 2000)),
 	)
+}
+
+type ListRecordsPayload struct {
+	IdentityNumber string `schema:"identityDetail.identityNumber" binding:"omitempty"`
+	Name           string `schema:"name" binding:"omitempty"`
+	PhoneNumber    string `schema:"phoneNumber" binding:"omitempty"`
+	CreatedAt      string `schema:"createdAt" binding:"omitempty"`
+	Limit          int    `schema:"limit" binding:"omitempty"`
+	Offset         int    `schema:"offset" binding:"omitempty"`
 }

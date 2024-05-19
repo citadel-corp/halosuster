@@ -1,3 +1,4 @@
+DROP TYPE IF EXISTS gender;
 CREATE TYPE gender AS ENUM('male', 'female');
 
 CREATE TABLE IF NOT EXISTS

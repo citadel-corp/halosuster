@@ -1,3 +1,4 @@
+DROP TYPE IF EXISTS user_type;
 CREATE TYPE user_type AS ENUM('IT', 'Nurse');
 
 CREATE TABLE IF NOT EXISTS

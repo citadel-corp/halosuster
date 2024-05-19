@@ -3,8 +3,8 @@ package medicalrecords
 import "time"
 
 type MedicalRecords struct {
-	ID string
-	// UserID string
+	ID          string
+	UserID      string
 	PatientId   string
 	Symptoms    string
 	Medications string

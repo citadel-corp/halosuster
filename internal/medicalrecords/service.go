@@ -39,6 +39,7 @@ func (s *userService) CreateMedicalRecord(ctx context.Context, req PostMedicalRe
 
 	medicalRecord := &MedicalRecords{
 		ID:          id.GenerateStringID(16),
+		UserID:      req.UserId,
 		PatientId:   patient.ID,
 		Symptoms:    req.Symptoms,
 		Medications: req.Medications,
