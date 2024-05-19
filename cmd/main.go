@@ -17,6 +17,8 @@ import (
 	"github.com/citadel-corp/halosuster/internal/common/db"
 	"github.com/citadel-corp/halosuster/internal/common/middleware"
 	"github.com/citadel-corp/halosuster/internal/image"
+	"github.com/citadel-corp/halosuster/internal/medicalpatients"
+	"github.com/citadel-corp/halosuster/internal/medicalrecords"
 	"github.com/citadel-corp/halosuster/internal/user"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog"
@@ -56,6 +58,16 @@ func main() {
 	userService := user.NewService(userRepository)
 	userHandler := user.NewHandler(userService)
 
+	// initialize medical patient domain
+	medicalPatientRepository := medicalpatients.NewRepository(db)
+	medicalPatientService := medicalpatients.NewService(medicalPatientRepository)
+	medicalPatientHandler := medicalpatients.NewHandler(medicalPatientService)
+
+	// initialize medical record domain
+	medicalRecordsRepository := medicalrecords.NewRepository(db)
+	medicalRecordsService := medicalrecords.NewService(medicalRecordsRepository, medicalPatientRepository)
+	medicalRecordsHandler := medicalrecords.NewHandler(medicalRecordsService)
+
 	// initialize image domain
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("ap-southeast-1"),
@@ -93,6 +105,16 @@ func main() {
 	// image routes
 	ir := v1.PathPrefix("/image").Subrouter()
 	ir.HandleFunc("", middleware.AuthorizeITAndNurseUser(imageHandler.UploadToS3)).Methods(http.MethodPost)
+
+	// medical patient routes
+	mpr := v1.PathPrefix("/medical/patient").Subrouter()
+	mpr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalPatientHandler.CreateMedicalPatient)).Methods(http.MethodPost)
+	mpr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalPatientHandler.ListMedicalPatient)).Methods(http.MethodGet)
+
+	// medical record routes
+	mr := v1.PathPrefix("/medical/record").Subrouter()
+	mr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalRecordsHandler.CreateMedicalRecord)).Methods(http.MethodPost)
+	mr.HandleFunc("", middleware.AuthorizeITAndNurseUser(medicalRecordsHandler.ListMedicalRecords)).Methods(http.MethodGet)
 
 	httpServer := &http.Server{
 		Addr:    ":8080",

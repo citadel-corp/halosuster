@@ -6,7 +6,7 @@ type UserAuthResponse struct {
 	UserID      string  `json:"userId"`
 	NIP         int     `json:"nip"`
 	Name        string  `json:"name"`
-	AccessToken *string `json:"accessToken"`
+	AccessToken *string `json:"accessToken,omitempty"`
 }
 
 type UserResponse struct {
