@@ -27,7 +27,7 @@ func (d *dbRepository) Create(ctx context.Context, medicalrecord *MedicalRecords
         INSERT INTO medical_records (id, user_id, patient_id, symptoms, medications)
         VALUES ($1, $2, $3, $4, $5);
     `
-	_, err := d.db.DB().ExecContext(ctx, q, medicalrecord.ID, medicalrecord.UserID, medicalrecord.PatientId, medicalrecord.Symptoms, medicalrecord.Medications, medicalrecord.CreatedAt)
+	_, err := d.db.DB().ExecContext(ctx, q, medicalrecord.ID, medicalrecord.UserID, medicalrecord.PatientId, medicalrecord.Symptoms, medicalrecord.Medications)
 	if err != nil {
 		return err
 	}
