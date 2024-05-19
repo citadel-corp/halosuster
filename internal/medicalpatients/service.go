@@ -2,7 +2,6 @@ package medicalpatients
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/citadel-corp/halosuster/internal/common/id"
@@ -23,11 +22,11 @@ func NewService(repository Repository) Service {
 
 func (s *medicalPatientsService) CreateMedicalPatients(ctx context.Context, req PostMedicalPatients) error {
 	var err error
-	idNumber := strconv.Itoa(int(req.IdentityNumber))
+	// idNumber := strconv.Itoa(int(req.IdentityNumber))
 
 	medicalpatient := &MedicalPatients{
 		ID:              id.GenerateStringID(16),
-		IdentityNumber:  idNumber,
+		IdentityNumber:  req.IdentityNumber,
 		PhoneNumber:     req.PhoneNumber,
 		Name:            req.Name,
 		Birthdate:       req.Birthdate,

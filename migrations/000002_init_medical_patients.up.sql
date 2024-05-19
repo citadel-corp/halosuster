@@ -4,7 +4,7 @@ CREATE TYPE gender AS ENUM('male', 'female');
 CREATE TABLE IF NOT EXISTS
 medical_patients (
     id CHAR(16) PRIMARY KEY,
-    identity_number CHAR(16) UNIQUE,
+    identity_number BIGINT UNIQUE,
     phone_number VARCHAR(16) NOT NULL,
     name VARCHAR(30) NOT NULL,
     birth_date DATE NOT NULL,

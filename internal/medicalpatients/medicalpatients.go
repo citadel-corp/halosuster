@@ -14,7 +14,7 @@ var Genders []interface{} = []interface{}{Male, Female}
 type MedicalPatients struct {
 	ID string `json:"-"`
 	// UserID string
-	IdentityNumber  string    `json:"identityNumber"`
+	IdentityNumber  int64     `json:"identityNumber"`
 	PhoneNumber     string    `json:"phoneNumber"`
 	Name            string    `json:"name"`
 	Birthdate       time.Time `json:"birthDate"`
